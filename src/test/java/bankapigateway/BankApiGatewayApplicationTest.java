@@ -12,44 +12,35 @@ import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * @author Ryan Baxter
+ * Bank Api Gateway Application Unit Test.
+ *
+ * @author jmaocele
  */
 // tag::code[]
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-		properties = {"httpbin=http://localhost:${wiremock.server.port}"})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+    "httpbin=http://localhost:${wiremock.server.port}" })
 @AutoConfigureWireMock(port = 0)
-public class BankApiGatewayApplicationTest {
+class BankApiGatewayApplicationTest {
 
-	@Autowired
-	private WebTestClient webClient;
+  @Autowired
+  private WebTestClient webClient;
 
-	@Test
-	public void contextLoads() throws Exception {
-		//Stubs
-		stubFor(get(urlEqualTo("/get"))
-				.willReturn(aResponse()
-					.withBody("{\"headers\":{\"Hello\":\"World\"}}")
-					.withHeader("Content-Type", "application/json")));
-		stubFor(get(urlEqualTo("/delay/3"))
-			.willReturn(aResponse()
-				.withBody("no fallback")
-				.withFixedDelay(3000)));
+  @Test
+  void contextLoads() throws Exception {
+    // Stubs
+    stubFor(get(urlEqualTo("/get")).willReturn(
+        aResponse().withBody("{\"headers\":{\"Hello\":\"World\"}}")
+            .withHeader("Content-Type", "application/json")));
+    stubFor(get(urlEqualTo("/delay/3")).willReturn(
+        aResponse().withBody("no fallback").withFixedDelay(3000)));
 
-		webClient
-			.get().uri("/get")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.jsonPath("$.headers.Hello").isEqualTo("World");
+    webClient.get().uri("/get").exchange().expectStatus().isOk()
+        .expectBody().jsonPath("$.headers.Hello").isEqualTo("World");
 
-		webClient
-			.get().uri("/delay/3")
-			.header("Host", "www.banking.com")
-			.exchange()
-			.expectStatus().isOk()
-			.expectBody()
-			.consumeWith(
-				response -> assertThat(response.getResponseBody()).isEqualTo("fallback".getBytes()));
-	}
+    webClient.get().uri("/delay/3").header("Host", "www.banking.com")
+        .exchange().expectStatus().isOk().expectBody().consumeWith(
+            response -> assertThat(response.getResponseBody())
+                .isEqualTo("fallback".getBytes()));
+  }
 }
 // end::code[]
